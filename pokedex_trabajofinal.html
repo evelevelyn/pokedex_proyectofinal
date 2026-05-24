@@ -1,0 +1,2379 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PokéDex – Detecta Pokémon en la Naturaleza</title>
+  <meta name="description"
+    content="Pokédex inteligente que usa IA para identificar animales reales y mapearlos a sus Pokémon equivalentes." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&family=Roboto+Mono:wght@400;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* ─── RESET & BASE ─────────────────────────────── */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --red: #CC0000;
+      --red-dark: #8B0000;
+      --red-light: #FF3333;
+      --red-glow: #FF000066;
+      --black: #0a0a0a;
+      --dark: #111111;
+      --panel: #1a1a1a;
+      --screen-bg: #0d1f0d;
+      --screen-green: #39ff14;
+      --screen-dim: #1a4a1a;
+      --gold: #FFD700;
+      --silver: #C0C0C0;
+      --white: #F0F0F0;
+      --hp-green: #44ff44;
+      --hp-yellow: #ffcc00;
+      --hp-red: #ff4444;
+      --font-pixel: 'Press Start 2P', monospace;
+      --font-mono: 'Roboto Mono', monospace;
+      --font-vt: 'VT323', monospace;
+    }
+
+    body {
+      background: radial-gradient(ellipse at top, #1a0000 0%, #000000 60%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: var(--font-mono);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ─── HEADER ───────────────────────────────────── */
+    header {
+      width: 100%;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: linear-gradient(180deg, #1a0000 0%, transparent 100%);
+      position: relative;
+    }
+
+    .logo-dot {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fff 0%, var(--red-light) 50%, var(--red-dark) 100%);
+      box-shadow: 0 0 10px var(--red-light), 0 0 20px var(--red-glow);
+      animation: pulse-dot 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse-dot {
+
+      0%,
+      100% {
+        box-shadow: 0 0 10px var(--red-light), 0 0 20px var(--red-glow);
+      }
+
+      50% {
+        box-shadow: 0 0 20px var(--red-light), 0 0 40px var(--red-glow), 0 0 60px #ff000033;
+      }
+    }
+
+    .logo-dot:first-of-type { position: absolute; left: 24px; }
+    .logo-dot:last-of-type  { position: absolute; right: 70px; }
+
+    #music-btn {
+      position: absolute;
+      right: 24px;
+      background: none;
+      border: 2px solid var(--red-light);
+      color: var(--red-light);
+      font-size: 16px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 0 8px var(--red-glow);
+    }
+
+    #music-btn:hover {
+      background: var(--red-dark);
+      box-shadow: 0 0 16px var(--red-glow);
+    }
+
+    .header-title {
+      font-family: var(--font-pixel);
+      font-size: clamp(14px, 3vw, 22px);
+      color: var(--red-light);
+      text-shadow: 0 0 10px var(--red-glow), 2px 2px 0 var(--red-dark);
+      letter-spacing: 2px;
+    }
+
+    .header-sub {
+      font-family: var(--font-pixel);
+      font-size: clamp(6px, 1.2vw, 9px);
+      color: #aaa;
+      letter-spacing: 1px;
+      margin-top: 4px;
+    }
+
+    /* ─── MAIN LAYOUT ──────────────────────────────── */
+    main {
+      width: 100%;
+      max-width: 1100px;
+      padding: 0 16px 40px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    @media (max-width: 720px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ─── POKÉDEX BODY ─────────────────────────────── */
+    .pokedex-body {
+      background: linear-gradient(135deg, var(--red) 0%, var(--red-dark) 50%, #5a0000 100%);
+      border-radius: 20px 20px 12px 12px;
+      padding: 3px;
+      box-shadow:
+        0 0 0 2px var(--red-dark),
+        0 8px 32px #00000088,
+        inset 0 2px 4px #ffffff22;
+      position: relative;
+    }
+
+    .pokedex-inner {
+      background: linear-gradient(135deg, #cc1111 0%, #8b0000 60%, #4a0000 100%);
+      border-radius: 18px 18px 10px 10px;
+      padding: 20px 20px 16px;
+    }
+
+    /* ─── INDICATOR LIGHTS ─────────────────────────── */
+    .lights-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .light-big {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #aaddff 0%, #3399ff 40%, #0066cc 100%);
+      border: 3px solid #ffffff55;
+      box-shadow: 0 0 12px #3399ff99, inset 0 -3px 6px #00000033;
+      animation: pulse-blue 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-blue {
+
+      0%,
+      100% {
+        box-shadow: 0 0 12px #3399ff99, inset 0 -3px 6px #00000033;
+      }
+
+      50% {
+        box-shadow: 0 0 24px #3399ffcc, 0 0 40px #3399ff44, inset 0 -3px 6px #00000033;
+      }
+    }
+
+    .light-small {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #ffffff33;
+    }
+
+    .light-red {
+      background: radial-gradient(circle, #ff6666, #cc0000);
+      box-shadow: 0 0 6px #ff000077;
+    }
+
+    .light-yellow {
+      background: radial-gradient(circle, #ffff66, #ccaa00);
+      box-shadow: 0 0 6px #ffff0077;
+    }
+
+    .light-green {
+      background: radial-gradient(circle, #66ff66, #00aa00);
+      box-shadow: 0 0 6px #00ff0077;
+    }
+
+    /* ─── MAIN SCREEN ──────────────────────────────── */
+    .screen-container {
+      background: #222;
+      border-radius: 8px;
+      padding: 6px;
+      border: 3px solid #111;
+      box-shadow: inset 0 2px 8px #00000088;
+      margin-bottom: 16px;
+    }
+
+    .screen {
+      background: var(--screen-bg);
+      border-radius: 4px;
+      min-height: 260px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #0a300a;
+    }
+
+    /* CRT scanlines overlay */
+    .screen::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 2px,
+          rgba(0, 0, 0, 0.15) 2px,
+          rgba(0, 0, 0, 0.15) 4px);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Vignette */
+    .screen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse at center, transparent 50%, rgba(0, 0, 0, 0.5) 100%);
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* ─── IDLE STATE ───────────────────────────────── */
+    .idle-display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      z-index: 5;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .idle-pokeball {
+      width: 60px;
+      height: 60px;
+      position: relative;
+      animation: spin-ball 6s linear infinite;
+    }
+
+    @keyframes spin-ball {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .pokeball-svg {
+      width: 60px;
+      height: 60px;
+    }
+
+    .idle-text {
+      font-family: var(--font-pixel);
+      font-size: 7px;
+      color: var(--screen-green);
+      text-shadow: 0 0 8px var(--screen-green);
+      line-height: 1.8;
+    }
+
+    /* ─── SCANNING STATE ───────────────────────────── */
+    .scanning-overlay {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      z-index: 20;
+      background: rgba(0, 15, 0, 0.75);
+      backdrop-filter: brightness(0.6);
+    }
+
+    .scanning-overlay.active {
+      display: flex;
+    }
+
+    .scan-line {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, var(--screen-green), transparent);
+      box-shadow: 0 0 10px var(--screen-green);
+      animation: scan-move 1.5s linear infinite;
+    }
+
+    @keyframes scan-move {
+      from {
+        top: 0%;
+      }
+
+      to {
+        top: 100%;
+      }
+    }
+
+    .scan-corners {
+      position: absolute;
+      inset: 20px;
+      border: 2px solid var(--screen-green);
+      opacity: 0.6;
+      animation: corner-blink 0.5s ease-in-out infinite alternate;
+    }
+
+    .scan-corners::before,
+    .scan-corners::after {
+      content: '';
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border-color: var(--screen-green);
+      border-style: solid;
+    }
+
+    .scan-corners::before {
+      top: -2px;
+      left: -2px;
+      border-width: 4px 0 0 4px;
+    }
+
+    .scan-corners::after {
+      bottom: -2px;
+      right: -2px;
+      border-width: 0 4px 4px 0;
+    }
+
+    @keyframes corner-blink {
+      from {
+        opacity: 0.3;
+      }
+
+      to {
+        opacity: 1;
+      }
+    }
+
+    .scan-text {
+      font-family: var(--font-pixel);
+      font-size: 8px;
+      color: var(--screen-green);
+      text-shadow: 0 0 10px var(--screen-green);
+      z-index: 5;
+      animation: blink-text 0.8s step-end infinite;
+    }
+
+    @keyframes blink-text {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.2;
+      }
+    }
+
+    .scan-dots {
+      display: flex;
+      gap: 6px;
+      z-index: 5;
+    }
+
+    .scan-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--screen-green);
+      box-shadow: 0 0 8px var(--screen-green);
+      animation: dot-pulse 1.2s ease-in-out infinite;
+    }
+
+    .scan-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .scan-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes dot-pulse {
+
+      0%,
+      100% {
+        transform: scale(0.6);
+        opacity: 0.4;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+
+    /* ─── RESULT DISPLAY ───────────────────────────── */
+    #result-display {
+      display: none;
+      padding: 12px;
+      width: 100%;
+      z-index: 5;
+    }
+
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    #pokemon-sprite {
+      width: 72px;
+      height: 72px;
+      image-rendering: pixelated;
+      animation: sprite-bounce 0.8s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 8px var(--screen-green));
+    }
+
+    @keyframes sprite-bounce {
+      from {
+        transform: translateY(0);
+      }
+
+      to {
+        transform: translateY(-4px);
+      }
+    }
+
+    .pokemon-name-display {
+      font-family: var(--font-pixel);
+      font-size: 10px;
+      color: var(--screen-green);
+      text-shadow: 0 0 8px var(--screen-green);
+      margin-bottom: 4px;
+    }
+
+    .pokemon-number {
+      font-family: var(--font-vt);
+      font-size: 18px;
+      color: #5aff5a;
+    }
+
+    .result-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--screen-green), transparent);
+      margin: 8px 0;
+      opacity: 0.5;
+    }
+
+    .info-line {
+      font-family: var(--font-vt);
+      font-size: 16px;
+      color: #88ff88;
+      line-height: 1.4;
+      display: flex;
+      gap: 6px;
+    }
+
+    .info-label {
+      color: var(--screen-green);
+      flex-shrink: 0;
+    }
+
+    /* ─── ERROR / NO DETECT ────────────────────────── */
+    #no-detect-display {
+      display: none;
+      padding: 20px;
+      text-align: center;
+      z-index: 5;
+    }
+
+    .error-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .error-text {
+      font-family: var(--font-pixel);
+      font-size: 7px;
+      color: #ff6666;
+      text-shadow: 0 0 8px #ff000066;
+      line-height: 2;
+      animation: blink-text 1.2s step-end infinite;
+    }
+
+    /* ─── PREVIEW IMAGE (inside screen) ───────────── */
+    #screen-preview {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 2;
+      opacity: 0.4;
+    }
+
+    #screen-video {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 2;
+      opacity: 0.45;
+    }
+
+    /* ─── CONFIDENCE BAR ───────────────────────────── */
+    .confidence-section {
+      background: #111;
+      border-radius: 4px;
+      padding: 10px 12px;
+      margin-bottom: 14px;
+      border: 1px solid #333;
+    }
+
+    .confidence-label {
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      color: #aaa;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .confidence-label span {
+      color: var(--gold);
+    }
+
+    .conf-bar-track {
+      height: 12px;
+      background: #222;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+
+    .conf-bar-fill {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.4s ease, background 0.4s ease;
+      background: linear-gradient(90deg, var(--hp-green), #88ff88);
+      box-shadow: 0 0 8px #44ff4488;
+      width: 0%;
+    }
+
+    .conf-bar-fill.medium {
+      background: linear-gradient(90deg, var(--hp-yellow), #ffee88);
+      box-shadow: 0 0 8px #ffcc0088;
+    }
+
+    .conf-bar-fill.low {
+      background: linear-gradient(90deg, var(--hp-red), #ff8888);
+      box-shadow: 0 0 8px #ff444488;
+    }
+
+    /* All labels bar */
+    .all-labels {
+      margin-top: 8px;
+    }
+
+    .label-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .label-name {
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      color: #888;
+      width: 62px;
+      flex-shrink: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .label-name.top {
+      color: var(--gold);
+    }
+
+    .label-mini-track {
+      flex: 1;
+      height: 6px;
+      background: #1a1a1a;
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .label-mini-fill {
+      height: 100%;
+      border-radius: 3px;
+      background: #444;
+      transition: width 0.4s ease;
+    }
+
+    .label-mini-fill.top {
+      background: linear-gradient(90deg, var(--gold), #fff8c0);
+    }
+
+    .label-pct {
+      font-family: var(--font-vt);
+      font-size: 13px;
+      color: #666;
+      width: 34px;
+      text-align: right;
+    }
+
+    .label-pct.top {
+      color: var(--gold);
+    }
+
+    /* ─── CONTROLS ─────────────────────────────────── */
+    .controls-section {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .controls-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-reset {
+      background: linear-gradient(135deg, #111, #0a0a0a);
+      color: #555;
+      border: 1px solid #222;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      width: 100%;
+      letter-spacing: 1px;
+    }
+
+    .btn-reset:hover {
+      color: #aaa;
+      border-color: #444;
+      background: #1a1a1a;
+    }
+
+    .btn {
+      flex: 1;
+      padding: 10px 8px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: var(--font-pixel);
+      font-size: 7px;
+      transition: all 0.15s ease;
+      position: relative;
+      overflow: hidden;
+      line-height: 1.6;
+    }
+
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .btn:active {
+      transform: scale(0.96);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--red), var(--red-dark));
+      color: #fff;
+      border: 2px solid var(--red-dark);
+      box-shadow: 0 4px 0 #5a0000, 0 0 12px #cc000044;
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--red-light), var(--red));
+      box-shadow: 0 4px 0 #5a0000, 0 0 20px #cc000066;
+    }
+
+    .btn-secondary {
+      background: linear-gradient(135deg, #222, #111);
+      color: #ccc;
+      border: 2px solid #333;
+      box-shadow: 0 4px 0 #050505;
+    }
+
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+      color: #fff;
+    }
+
+    .btn-cam {
+      background: linear-gradient(135deg, #003366, #001a33);
+      color: #66aaff;
+      border: 2px solid #002244;
+      box-shadow: 0 4px 0 #000a1a, 0 0 12px #0066cc33;
+    }
+
+    .btn-cam:hover {
+      box-shadow: 0 4px 0 #000a1a, 0 0 20px #0066cc55;
+    }
+
+    .btn-cam.active {
+      background: linear-gradient(135deg, #0066cc, #003366);
+      color: #aaddff;
+      box-shadow: 0 4px 0 #000a1a, 0 0 20px #0099ff88;
+    }
+
+    .btn-icon {
+      font-size: 14px;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    #file-input {
+      display: none;
+    }
+
+    /* ─── DECORATIVE BUTTONS ROW ───────────────────── */
+    .dpad-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+    }
+
+    .small-btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .deco-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 4px;
+      background: linear-gradient(135deg, #222, #111);
+      border: 2px solid #333;
+      box-shadow: 0 3px 0 #050505;
+      cursor: default;
+    }
+
+    .dpad {
+      width: 48px;
+      height: 48px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      border: 2px solid #333;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: 1fr 1fr 1fr;
+      box-shadow: 0 3px 0 #050505;
+    }
+
+    .dpad-center {
+      background: #222;
+      border-radius: 2px;
+      grid-column: 2;
+      grid-row: 2;
+    }
+
+    /* ─── RIGHT PANEL ──────────────────────────────── */
+    .info-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* ─── POKÉMON CARD ─────────────────────────────── */
+    .card {
+      background: linear-gradient(135deg, #1a0000 0%, #0d0d0d 100%);
+      border: 2px solid #3a0000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px #00000088, inset 0 1px 0 #ffffff11;
+      transition: all 0.4s ease;
+    }
+
+    .card.revealed {
+      border-color: var(--red);
+      box-shadow: 0 4px 20px #00000088, 0 0 20px #cc000033, inset 0 1px 0 #ffffff11;
+    }
+
+    .card-header {
+      background: linear-gradient(90deg, #2a0000, #1a0000);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid #3a0000;
+    }
+
+    .card-title {
+      font-family: var(--font-pixel);
+      font-size: 8px;
+      color: var(--red-light);
+      text-shadow: 0 0 8px var(--red-glow);
+      flex: 1;
+    }
+
+    .card-badge {
+      background: var(--red-dark);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      color: #ffaaaa;
+    }
+
+    .card-body {
+      padding: 16px;
+    }
+
+    /* ─── POKEMON INFO ─────────────────────────────── */
+    .pokemon-showcase {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    .pokemon-img-wrap {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      flex-shrink: 0;
+    }
+
+    .pokemon-glow-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle, #ff000022, transparent 70%);
+      animation: glow-pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes glow-pulse {
+
+      0%,
+      100% {
+        transform: scale(0.9);
+        opacity: 0.5;
+      }
+
+      50% {
+        transform: scale(1.2);
+        opacity: 1;
+      }
+    }
+
+    #pokemon-main-sprite {
+      width: 100px;
+      height: 100px;
+      image-rendering: pixelated;
+      position: relative;
+      z-index: 2;
+      animation: sprite-float 3s ease-in-out infinite;
+      filter: drop-shadow(0 4px 12px #cc000055);
+    }
+
+    @keyframes sprite-float {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(-6px);
+      }
+    }
+
+    .pokemon-info {
+      flex: 1;
+    }
+
+    .poke-name {
+      font-family: var(--font-pixel);
+      font-size: 14px;
+      color: var(--white);
+      text-shadow: 2px 2px 0 var(--red-dark);
+      margin-bottom: 4px;
+    }
+
+    .poke-number {
+      font-family: var(--font-vt);
+      font-size: 22px;
+      color: var(--red-light);
+      margin-bottom: 8px;
+    }
+
+    .poke-types {
+      display: flex;
+      gap: 6px;
+    }
+
+    .type-badge {
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      font-weight: bold;
+    }
+
+    .type-bug {
+      background: #92BC2C;
+      color: #fff;
+    }
+
+    .type-flying {
+      background: #A1BCEC;
+      color: #222;
+    }
+
+    .type-poison {
+      background: #A65390;
+      color: #fff;
+    }
+
+    .type-fire {
+      background: #FBA54C;
+      color: #222;
+    }
+
+    .type-water {
+      background: #5070C4;
+      color: #fff;
+    }
+
+    .type-normal {
+      background: #A0A090;
+      color: #fff;
+    }
+
+    .type-rock {
+      background: #B0A038;
+      color: #fff;
+    }
+
+    .type-ground {
+      background: #E0C068;
+      color: #222;
+    }
+
+    .type-psychic {
+      background: #F85888;
+      color: #fff;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .stat-item {
+      background: #111;
+      border: 1px solid #2a0000;
+      border-radius: 6px;
+      padding: 6px 8px;
+    }
+
+    .stat-name {
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      color: var(--red-light);
+      margin-bottom: 2px;
+    }
+
+    .stat-val {
+      font-family: var(--font-vt);
+      font-size: 18px;
+      color: var(--white);
+    }
+
+    /* ─── ANIMAL INFO CARD ─────────────────────────── */
+    .animal-showcase {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+
+    .animal-img-wrap {
+      width: 110px;
+      flex-shrink: 0;
+    }
+
+    #animal-img {
+      width: 110px;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #3a0000;
+      display: block;
+    }
+
+    .animal-names {
+      flex: 1;
+    }
+
+    .animal-common {
+      font-family: var(--font-pixel);
+      font-size: 9px;
+      color: var(--white);
+      margin-bottom: 4px;
+    }
+
+    .animal-scientific {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: #aaa;
+      font-style: italic;
+      margin-bottom: 8px;
+    }
+
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .info-table tr td {
+      padding: 5px 6px;
+      border-bottom: 1px solid #1a0000;
+      font-size: 12px;
+    }
+
+    .info-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .info-table td:first-child {
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      color: var(--red-light);
+      width: 80px;
+      vertical-align: top;
+      padding-top: 6px;
+    }
+
+    .info-table td:last-child {
+      color: #ccc;
+    }
+
+    .conservation-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      font-weight: bold;
+    }
+
+    .cons-lc {
+      background: #44aa44;
+      color: #fff;
+    }
+
+    .cons-nt {
+      background: #88aa44;
+      color: #fff;
+    }
+
+    .cons-vu {
+      background: #aaaa44;
+      color: #fff;
+    }
+
+    .cons-en {
+      background: #cc7700;
+      color: #fff;
+    }
+
+    .cons-cr {
+      background: #cc2200;
+      color: #fff;
+    }
+
+    .curiosity-box {
+      background: #0d0d0d;
+      border: 1px solid #2a0000;
+      border-left: 3px solid var(--red);
+      border-radius: 0 6px 6px 0;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    .curiosity-label {
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      color: var(--red-light);
+      margin-bottom: 6px;
+    }
+
+    .curiosity-text {
+      font-size: 11px;
+      color: #bbb;
+      line-height: 1.5;
+    }
+
+    /* ─── INITIAL PLACEHOLDER ──────────────────────── */
+    .placeholder-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      min-height: 300px;
+      color: #333;
+    }
+
+    .placeholder-text {
+      font-family: var(--font-pixel);
+      font-size: 7px;
+      color: #333;
+      text-align: center;
+      line-height: 2;
+    }
+
+    .placeholder-sprite {
+      width: 80px;
+      height: 80px;
+      filter: grayscale(1) brightness(0.3);
+      image-rendering: pixelated;
+    }
+
+    /* ─── FOOTER ───────────────────────────────────── */
+    footer {
+      width: 100%;
+      text-align: center;
+      padding: 16px;
+      font-family: var(--font-pixel);
+      font-size: 5px;
+      color: #333;
+      letter-spacing: 2px;
+    }
+
+    /* ─── MOBILE STICKY BAR ────────────────────────── */
+    @media (max-width: 720px) {
+      .mobile-sticky {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: linear-gradient(0deg, #0a0000 80%, transparent);
+        padding: 12px 16px 20px;
+        display: flex;
+        gap: 10px;
+        z-index: 100;
+      }
+
+      main {
+        padding-bottom: 100px;
+      }
+
+      .controls-section {
+        display: none;
+      }
+    }
+
+    @media (min-width: 721px) {
+      .mobile-sticky {
+        display: none;
+      }
+    }
+
+    /* ─── REVEAL ANIMATION ─────────────────────────── */
+    @keyframes reveal-slide {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .card.revealed .card-body>div:not(.hidden) {
+      animation: reveal-slide 0.5s ease-out;
+    }
+
+    /* ─── TOOLTIP / THRESHOLD LINE ─────────────────── */
+    .threshold-line {
+      position: relative;
+      margin-top: 4px;
+    }
+
+    .threshold-line::before {
+      content: '';
+      position: absolute;
+      left: 85%;
+      top: -16px;
+      bottom: -4px;
+      width: 1px;
+      background: rgba(255, 200, 0, 0.4);
+      pointer-events: none;
+    }
+
+    .threshold-label {
+      position: absolute;
+      left: 85%;
+      top: -14px;
+      font-family: var(--font-pixel);
+      font-size: 4px;
+      color: #ffcc0088;
+      transform: translateX(-50%);
+      white-space: nowrap;
+    }
+
+    /* ─── LOADING SCREEN ───────────────────────────── */
+    #loading-screen {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      gap: 24px;
+      transition: opacity 0.8s ease;
+    }
+
+    .loading-title {
+      font-family: var(--font-pixel);
+      font-size: clamp(12px, 3vw, 20px);
+      color: var(--red-light);
+      text-shadow: 0 0 20px var(--red-glow);
+      animation: blink-text 1s step-end infinite;
+    }
+
+    .loading-bar-wrap {
+      width: min(300px, 80vw);
+      height: 16px;
+      border: 2px solid var(--red-dark);
+      border-radius: 8px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .loading-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red-dark), var(--red-light));
+      box-shadow: 0 0 10px var(--red-glow);
+      width: 0%;
+      animation: load-fill 2.5s ease-out forwards;
+    }
+
+    @keyframes load-fill {
+      0% {
+        width: 0%;
+      }
+
+      100% {
+        width: 100%;
+      }
+    }
+
+    .loading-status {
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      color: #666;
+    }
+
+    /* ─── HIDE HELPERS ─────────────────────────────── */
+    .hidden {
+      display: none !important;
+    }
+
+    /* ─── CAMERA MODAL ─────────────────────────────── */
+    #cam-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: #000000cc;
+      z-index: 500;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    #cam-modal.active {
+      display: flex;
+    }
+
+    .cam-modal-inner {
+      background: linear-gradient(135deg, #1a0000, #0d0d0d);
+      border: 3px solid var(--red-dark);
+      border-radius: 16px;
+      padding: 20px;
+      width: min(480px, 95vw);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      box-shadow: 0 0 40px #cc000044;
+    }
+
+    .cam-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .cam-title {
+      font-family: var(--font-pixel);
+      font-size: 8px;
+      color: var(--red-light);
+    }
+
+    #cam-video {
+      width: 100%;
+      aspect-ratio: 4/3;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 2px solid #333;
+      background: #000;
+    }
+
+    .cam-canvas {
+      display: none;
+    }
+
+    .cam-live-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .cam-live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--hp-red);
+      animation: dot-pulse 1s ease-in-out infinite;
+    }
+
+    .cam-live-text {
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      color: var(--hp-red);
+    }
+
+    .cam-controls {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-close {
+      background: #333;
+      border: 2px solid #555;
+      border-radius: 4px;
+      color: #aaa;
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .btn-close:hover {
+      background: #444;
+      color: #fff;
+    }
+
+    .cam-conf-mini {
+      height: 8px;
+      background: #111;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #222;
+    }
+
+    .cam-conf-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red-dark), var(--red-light));
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .cam-result-label {
+      font-family: var(--font-pixel);
+      font-size: 6px;
+      color: var(--screen-green);
+      min-height: 14px;
+      text-shadow: 0 0 6px var(--screen-green);
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ══════════════ LOADING SCREEN ══════════════ -->
+  <div id="loading-screen">
+    <div style="text-align:center;">
+      <svg width="60" height="60" viewBox="0 0 60 60" style="animation:spin-ball 2s linear infinite">
+        <circle cx="30" cy="30" r="28" fill="#CC0000" stroke="#8B0000" stroke-width="2" />
+        <rect x="2" y="27" width="56" height="6" fill="#8B0000" />
+        <rect x="2" y="28" width="56" height="4" fill="#111" />
+        <circle cx="30" cy="30" r="8" fill="#111" stroke="#333" stroke-width="2" />
+        <circle cx="30" cy="30" r="4" fill="#fff" opacity="0.3" />
+        <circle cx="2" cy="30" r="28" fill="#fff" fill-opacity="0" clip-path="inset(0 50% 0 0)" />
+      </svg>
+    </div>
+    <div class="loading-title">POKÉDEX</div>
+    <div class="loading-bar-wrap">
+      <div class="loading-bar-fill"></div>
+    </div>
+    <div class="loading-status" id="load-status">CARGANDO MODELO...</div>
+  </div>
+
+  <!-- ══════════════ AUDIO ══════════════ -->
+  <audio id="bg-music" loop>
+    <source src="furret.mp3" type="audio/mpeg">
+  </audio>
+  <audio id="sound-scan">
+    <source src="scan.wav" type="audio/wav">
+  </audio>
+  <audio id="sound-success">
+    <source src="success.wav" type="audio/wav">
+  </audio>
+  <audio id="sound-fail">
+    <source src="fail.wav" type="audio/wav">
+  </audio>
+  <audio id="sound-cry">
+    <source src="" type="audio/mpeg">
+  </audio>
+
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header>
+    <div class="logo-dot"></div>
+    <div>
+      <div class="header-title">POKÉDEX</div>
+      <div class="header-sub">DETECTOR DE POKÉMON EN LA NATURALEZA</div>
+    </div>
+    <div class="logo-dot"></div>
+    <button id="music-btn" onclick="toggleMusic()" title="Música de fondo">🔇</button>
+  </header>
+
+  <!-- ══════════════ MAIN ══════════════ -->
+  <main>
+    <!-- LEFT: POKÉDEX UNIT -->
+    <div>
+      <!-- POKÉDEX BODY -->
+      <div class="pokedex-body">
+        <div class="pokedex-inner">
+          <!-- Indicator lights -->
+          <div class="lights-row">
+            <div class="light-big" title="Sensor principal"></div>
+            <div class="light-small light-red"></div>
+            <div class="light-small light-yellow"></div>
+            <div class="light-small light-green"></div>
+          </div>
+
+          <!-- Main screen -->
+          <div class="screen-container">
+            <div class="screen" id="main-screen">
+              <img id="screen-preview" alt="Vista previa" />
+              <video id="screen-video" autoplay playsinline muted></video>
+
+              <!-- Idle state -->
+              <div class="idle-display" id="idle-display">
+                <div class="idle-pokeball">
+                  <svg class="pokeball-svg" viewBox="0 0 60 60">
+                    <circle cx="30" cy="30" r="28" fill="#CC0000" stroke="#8B0000" stroke-width="2" />
+                    <path d="M2,30 Q2,2 30,2 Q58,2 58,30" fill="#CC0000" />
+                    <path d="M2,30 Q2,58 30,58 Q58,58 58,30" fill="#f0f0f0" />
+                    <rect x="2" y="28" width="56" height="4" fill="#111" />
+                    <circle cx="30" cy="30" r="8" fill="#f0f0f0" stroke="#111" stroke-width="2" />
+                    <circle cx="30" cy="30" r="4" fill="#fff" opacity="0.5" />
+                  </svg>
+                </div>
+                <div class="idle-text">
+                  POKÉDEX LISTA<br />
+                  ─────────────<br />
+                  SUBE UNA FOTO<br />
+                  O ACTIVA CÁMARA
+                </div>
+              </div>
+
+              <!-- Scanning overlay -->
+              <div class="scanning-overlay" id="scanning-overlay">
+                <div class="scan-line"></div>
+                <div class="scan-corners"></div>
+                <div class="scan-text">ANALIZANDO...</div>
+                <div class="scan-dots">
+                  <div class="scan-dot"></div>
+                  <div class="scan-dot"></div>
+                  <div class="scan-dot"></div>
+                </div>
+              </div>
+
+              <!-- Result in screen -->
+              <div id="result-display">
+                <div class="result-header">
+                  <img id="pokemon-sprite" src="" alt="Sprite" />
+                  <div>
+                    <div class="pokemon-name-display" id="screen-pokemon-name">---</div>
+                    <div class="pokemon-number" id="screen-pokemon-number">#000</div>
+                  </div>
+                </div>
+                <div class="result-divider"></div>
+                <div class="info-line">
+                  <span class="info-label">TIPO:</span>
+                  <span id="screen-animal-name">---</span>
+                </div>
+                <div class="info-line">
+                  <span class="info-label">NIVEL:</span>
+                  <span id="screen-conf-text">--%</span>
+                </div>
+              </div>
+
+              <!-- No detect -->
+              <div id="no-detect-display">
+                <div class="error-icon">⚠</div>
+                <div class="error-text">
+                  ¡SIN DATOS!<br />
+                  ────────────<br />
+                  NO SE DETECTÓ<br />
+                  NINGÚN POKÉMON<br />
+                  <br />
+                  CONFIANZA<br />
+                  INSUFICIENTE
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confidence bar -->
+          <div class="confidence-section">
+            <div class="confidence-label">
+              CONFIANZA DEL SENSOR
+              <span id="conf-pct-label">0%</span>
+            </div>
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill" id="conf-bar"></div>
+            </div>
+            <!-- All labels -->
+            <div class="all-labels" id="all-labels-container"></div>
+          </div>
+
+          <!-- Controls -->
+          <div class="controls-section">
+            <div class="controls-row">
+              <button class="btn btn-primary" id="btn-upload" onclick="document.getElementById('file-input').click()">
+                <span class="btn-icon">📁</span>
+                SUBIR IMAGEN
+              </button>
+              <button class="btn btn-cam" id="btn-cam" onclick="toggleCamera()">
+                <span class="btn-icon">📷</span>
+                CÁMARA LIVE
+              </button>
+            </div>
+            <input type="file" id="file-input" accept="image/*" onchange="handleFileUpload(event)" />
+          </div>
+
+          <!-- Decorative D-pad row -->
+          <div class="dpad-section">
+            <div class="small-btn-group">
+              <div class="deco-btn"></div>
+              <div class="deco-btn"></div>
+            </div>
+            <div class="dpad">
+              <div></div>
+              <div style="background:#1a1a1a;border-radius:2px"></div>
+              <div></div>
+              <div style="background:#1a1a1a;border-radius:2px"></div>
+              <div class="dpad-center"></div>
+              <div style="background:#1a1a1a;border-radius:2px"></div>
+              <div></div>
+              <div style="background:#1a1a1a;border-radius:2px"></div>
+              <div></div>
+            </div>
+            <div class="small-btn-group">
+              <div class="deco-btn" style="border-radius:50%;background:radial-gradient(circle,#ff6666,#cc0000)"></div>
+              <div class="deco-btn" style="border-radius:50%;background:radial-gradient(circle,#ffff66,#ccaa00)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: INFO PANEL -->
+    <div class="info-panel">
+      <!-- Pokémon Card -->
+      <div class="card" id="pokemon-card">
+        <div class="card-header">
+          <div class="card-title">DATOS DEL POKÉMON</div>
+          <div class="card-badge" id="poke-dex-number">#---</div>
+        </div>
+        <div class="card-body">
+          <!-- Placeholder -->
+          <div class="placeholder-card" id="pokemon-placeholder">
+            <img class="placeholder-sprite"
+              src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png" alt=""
+              onerror="this.style.display='none'" />
+            <div class="placeholder-text">
+              APUNTA LA CÁMARA<br />
+              O SUBE UNA IMAGEN<br />
+              PARA DETECTAR<br />
+              UN POKÉMON
+            </div>
+          </div>
+
+          <!-- Pokémon content -->
+          <div id="pokemon-content" class="hidden">
+            <div class="pokemon-showcase">
+              <div class="pokemon-img-wrap">
+                <div class="pokemon-glow-bg"></div>
+                <img id="pokemon-main-sprite" src="" alt="Pokémon" />
+              </div>
+              <div class="pokemon-info">
+                <div class="poke-name" id="poke-name">---</div>
+                <div class="poke-number" id="poke-num">#---</div>
+                <div class="poke-types" id="poke-types"></div>
+              </div>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-item">
+                <div class="stat-name">CATEGORÍA</div>
+                <div class="stat-val" id="poke-category" style="font-size:14px">---</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-name">GENERACIÓN</div>
+                <div class="stat-val" id="poke-gen">---</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-name">ALTURA</div>
+                <div class="stat-val" id="poke-height">---</div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-name">PESO</div>
+                <div class="stat-val" id="poke-weight">---</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animal Card -->
+      <div class="card" id="animal-card">
+        <div class="card-header">
+          <div class="card-title">ANIMAL REAL</div>
+          <div class="card-badge" id="animal-conservation-badge">---</div>
+        </div>
+        <div class="card-body">
+          <div class="placeholder-card" id="animal-placeholder">
+            <div class="placeholder-text">
+              AQUÍ APARECERÁ<br />
+              LA ESPECIE REAL<br />
+              CORRESPONDIENTE
+            </div>
+          </div>
+          <div id="animal-content" class="hidden">
+            <div class="animal-showcase">
+              <div class="animal-img-wrap">
+                <img id="animal-img" src="" alt="Animal real"
+                  onerror="this.style.display='none'" />
+              </div>
+              <div class="animal-names">
+                <div class="animal-common" id="animal-common">---</div>
+                <div class="animal-scientific" id="animal-scientific">---</div>
+              </div>
+            </div>
+            <table class="info-table">
+              <tr>
+                <td>HÁBITAT</td>
+                <td id="animal-habitat">---</td>
+              </tr>
+              <tr>
+                <td>CONSERVACIÓN</td>
+                <td><span class="conservation-badge" id="animal-conservation">---</span></td>
+              </tr>
+              <tr>
+                <td>POBLACIÓN</td>
+                <td id="animal-population">---</td>
+              </tr>
+            </table>
+            <div class="curiosity-box">
+              <div class="curiosity-label">💡 DATO CURIOSO</div>
+              <div class="curiosity-text" id="animal-curiosity">---</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ══════════════ CAMERA MODAL ══════════════ -->
+  <div id="cam-modal">
+    <div class="cam-modal-inner">
+      <div class="cam-header">
+        <div class="cam-title">📷 CÁMARA EN TIEMPO REAL</div>
+        <div class="cam-live-label">
+          <div class="cam-live-dot"></div>
+          <span class="cam-live-text">EN VIVO</span>
+        </div>
+      </div>
+      <video id="cam-video" autoplay playsinline muted></video>
+      <canvas id="cam-canvas" class="cam-canvas"></canvas>
+      <div class="cam-conf-mini">
+        <div class="cam-conf-fill" id="cam-conf-fill"></div>
+      </div>
+      <div class="cam-result-label" id="cam-result-label">Buscando Pokémon...</div>
+      <div class="cam-controls">
+        <button class="btn btn-primary" style="flex:1" onclick="captureFromCamera()">
+          📸 CAPTURAR Y ANALIZAR
+        </button>
+        <button class="btn-close" onclick="closeCamera()">✕ CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    POKÉDEX IA v1.0 · POWERED BY TEACHABLE MACHINE · TENSORFLOW.JS · POKEAPI
+  </footer>
+
+  <!-- ══════════════ SCRIPTS ══════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.5/dist/teachablemachine-image.min.js"></script>
+  <script>
+
+    /* ════════════════════════════════════════════════
+       POKÉMON & ANIMAL DATABASE
+       ════════════════════════════════════════════════ */
+    const POKEMON_DB = {
+      "Caterpie": {
+        pokeId: 10,
+        pokeName: "Caterpie",
+        pokeNumber: "#010",
+        types: ["bug"],
+        category: "Gusano",
+        generation: "I",
+        height: "0.3 m",
+        weight: "2.9 kg",
+        animal: {
+          commonName: "Oruga de cola de golondrina oscura",
+          scientificName: "Papilio troilus",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5b/Papilio_troilus_female_up_sjh.JPG/400px-Papilio_troilus_female_up_sjh.JPG",
+          habitat: "Bosques templados del este de América del Norte. Se encuentra en zonas de madera dura, bordes de bosques y jardines con plantas hospederas.",
+          conservation: "LC",
+          conservationText: "Preocupación menor",
+          conservationClass: "cons-lc",
+          population: "Estable (sin estimado oficial)",
+          curiosity: "Sus orugas tienen un órgano glandular llamado osmeterio que expulsa un olor desagradable como defensa. Los adultos imitan la apariencia de hojas para camuflarse."
+        }
+      },
+      "Butterfree": {
+        pokeId: 12,
+        pokeName: "Butterfree",
+        pokeNumber: "#012",
+        types: ["bug", "flying"],
+        category: "Mariposa",
+        generation: "I",
+        height: "1.1 m",
+        weight: "32.0 kg",
+        animal: {
+          commonName: "Mariposa de la Blanca del Majuelo",
+          scientificName: "Aporia crataegi",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Aporia_crataegi_4.jpg/400px-Aporia_crataegi_4.jpg",
+          habitat: "Prados floridos, bordes de bosque y jardines de Europa, Asia y norte de África. Prefiere altitudes medias con abundancia de plantas de la familia Rosaceae.",
+          conservation: "LC",
+          conservationText: "Preocupación menor",
+          conservationClass: "cons-lc",
+          population: "Estable pero con declive local en zonas agrícolas intensivas",
+          curiosity: "Sus alas translúcidas se deben a la pérdida de escamas al emerger. Es una de las pocas mariposas que puede formar enjambres migratorios que cubren kilómetros de cielo."
+        }
+      },
+      "Beefrill": {
+        pokeId: 15,
+        pokeName: "Beedrill",
+        pokeNumber: "#015",
+        types: ["bug", "poison"],
+        category: "Veneno abeja",
+        generation: "I",
+        height: "1.0 m",
+        weight: "29.5 kg",
+        animal: {
+          commonName: "Avispa común",
+          scientificName: "Vespula vulgaris",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f4/Vespula_vulgaris_Richard_Bartz.jpg/400px-Vespula_vulgaris_Richard_Bartz.jpg",
+          habitat: "Presente en casi todo el hemisferio norte: Europa, Asia y América del Norte. Nidifica en cavidades subterráneas, paredes y tejados. Coloniza jardines, bosques y zonas urbanas.",
+          conservation: "LC",
+          conservationText: "Preocupación menor",
+          conservationClass: "cons-lc",
+          population: "Abundante (millones de colonias a nivel global)",
+          curiosity: "Una sola reina puede fundar una colonia de más de 10,000 obreras en un verano. A diferencia de las abejas, las avispas pueden picar múltiples veces sin morir, y liberan feromonas de alarma que llaman a más avispas cuando se sienten amenazadas."
+        }
+      },
+      "Vulpix": {
+        pokeId: 37,
+        pokeName: "Vulpix",
+        pokeNumber: "#037",
+        types: ["fire"],
+        category: "Cola de zorro",
+        generation: "I",
+        height: "0.6 m",
+        weight: "9.9 kg",
+        animal: {
+          commonName: "Zorro rojo",
+          scientificName: "Vulpes vulpes",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Red_Fox_%28Vulpes_vulpes%29_-_Mississauga.jpg/400px-Red_Fox_%28Vulpes_vulpes%29_-_Mississauga.jpg",
+          habitat: "El mamífero carnívoro con mayor distribución geográfica del mundo: Europa, Asia, América del Norte, norte de África y Australia (introducido). Habita desde tundras árticas hasta desiertos y áreas urbanas.",
+          conservation: "LC",
+          conservationText: "Preocupación menor",
+          conservationClass: "cons-lc",
+          population: "Aprox. 35 millones de individuos maduros",
+          curiosity: "Tiene un repertorio de más de 28 vocalizaciones distintas, incluyendo el famoso 'grito' nocturno. Usa el campo magnético de la Tierra para cazar bajo la nieve con alta precisión."
+        }
+      },
+      "Furret": {
+        pokeId: 162,
+        pokeName: "Furret",
+        pokeNumber: "#162",
+        types: ["normal"],
+        category: "Larga cola",
+        generation: "II",
+        height: "1.8 m",
+        weight: "32.5 kg",
+        animal: {
+          commonName: "Hurón doméstico sable",
+          scientificName: "Mustela putorius furo",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Ferret_2010.jpg/400px-Ferret_2010.jpg",
+          habitat: "Animal doméstico distribuido mundialmente. Sus ancestros silvestres habitaban praderas, bosques y zonas rocosas de Europa y Asia Central. Prefieren madrigueras y espacios estrechos donde su cuerpo alargado les da ventaja.",
+          conservation: "DOM",
+          conservationText: "Especie doméstica",
+          conservationClass: "cons-lc",
+          population: "Aprox. 7-8 millones como mascotas en el mundo; ancestro silvestre (turón europeo) con ~350,000 individuos",
+          curiosity: "Los hurones han sido domesticados por más de 2,500 años, originalmente para cazar conejos. Su nombre en inglés 'ferret' viene del latín 'furritus' que significa 'ladrón pequeño'. Cuando juegan y están emocionados hacen un sonido llamado 'dooking', una especie de risa gutural."
+        }
+      },
+      "Tauros": {
+        pokeId: 128,
+        pokeName: "Tauros",
+        pokeNumber: "#128",
+        types: ["normal"],
+        category: "Toro salvaje",
+        generation: "I",
+        height: "1.4 m",
+        weight: "88.4 kg",
+        animal: {
+          commonName: "Bisonte americano",
+          scientificName: "Bison bison",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/American_bison_k5680-1.jpg/400px-American_bison_k5680-1.jpg",
+          habitat: "Praderas y pastizales abiertos de América del Norte, principalmente en Yellowstone, parques nacionales de Canadá y reservas naturales. Históricamente cubrían las Grandes Llanuras.",
+          conservation: "NT",
+          conservationText: "Casi amenazado",
+          conservationClass: "cons-nt",
+          population: "Aprox. 31,000 individuos silvestres; ~400,000 en cautiverio/ranchos",
+          curiosity: "En el siglo XIX su población llegó a 60 millones. La caza masiva los redujo a menos de 1,000 individuos. Es el animal nacional de Estados Unidos desde 2016. Pueden correr a 60 km/h pese a su enorme masa."
+        }
+      },
+      "kabuto": {
+        pokeId: 140,
+        pokeName: "Kabuto",
+        pokeNumber: "#140",
+        types: ["rock", "water"],
+        category: "Marisco",
+        generation: "I",
+        height: "0.5 m",
+        weight: "11.5 kg",
+        animal: {
+          commonName: "Cangrejo herradura",
+          scientificName: "Limulus polyphemus",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Horseshoe_Crab_at_Sunset_%28Sandy_Hook%2C_NJ%29.jpg/400px-Horseshoe_Crab_at_Sunset_%28Sandy_Hook%2C_NJ%29.jpg",
+          habitat: "Costas del Atlántico de América del Norte, desde el Golfo de México hasta Maine. Se reproduce en playas arenosas durante mareas altas de luna llena en primavera.",
+          conservation: "VU",
+          conservationText: "Vulnerable",
+          conservationClass: "cons-vu",
+          population: "Declive significativo; estimados regionales son inciertos",
+          curiosity: "Es un 'fósil viviente' con más de 450 millones de años sin cambios evolutivos significativos. Su sangre azul (contiene cobre) es vital para la industria farmacéutica: se usa para detectar toxinas bacterianas en vacunas y medicamentos."
+        }
+      },
+      "Wooper": {
+        pokeId: 194,
+        pokeName: "Wooper",
+        pokeNumber: "#194",
+        types: ["water", "ground"],
+        category: "Pez agua",
+        generation: "II",
+        height: "0.4 m",
+        weight: "8.5 kg",
+        animal: {
+          commonName: "Ajolote mexicano",
+          scientificName: "Ambystoma mexicanum",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Axolotl_ganz.jpg/400px-Axolotl_ganz.jpg",
+          habitat: "Endémico del lago Xochimilco en la Ciudad de México, aunque el hábitat natural está casi destruido. Actualmente sobrevive principalmente en cautiverio y en canales remanentes.",
+          conservation: "CR",
+          conservationText: "En peligro crítico",
+          conservationClass: "cons-cr",
+          population: "Menos de 1,000 individuos silvestres estimados",
+          curiosity: "El ajolote es el 'rey de la regeneración': puede regenerar extremidades completas, partes del corazón, ojos e incluso porciones del cerebro. Es neoténico, lo que significa que conserva características larvales (branquias externas) durante toda su vida adulta."
+        }
+      },
+      "Eevee": {
+        pokeId: 133,
+        pokeName: "Eevee",
+        pokeNumber: "#133",
+        types: ["normal"],
+        category: "Evolución",
+        generation: "I",
+        height: "0.3 m",
+        weight: "6.5 kg",
+        animal: {
+          commonName: "Zorro del desierto (Fenec)",
+          scientificName: "Vulpes zerda",
+          image: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Fennek1.jpg/400px-Fennek1.jpg",
+          habitat: "Desiertos del norte de África: Sahara, Sinaí y Arabia. Vive en madrigueras subterráneas que cava en la arena para escapar del calor extremo del día.",
+          conservation: "LC",
+          conservationText: "Preocupación menor",
+          conservationClass: "cons-lc",
+          population: "Estimado estable (sin conteo oficial preciso)",
+          curiosity: "Sus orejas gigantes (hasta 15 cm) son proporcionalmente las más grandes de todos los cánidos y sirven como radiadores para disipar el calor corporal. Puede sobrevivir sin agua directa: extrae la humedad de su comida. Es el cánido más pequeño del mundo."
+        }
+      }
+    };
+
+    // Normalize class name for DB lookup
+    function normalizeLabel(label) {
+      // Try exact match first
+      if (POKEMON_DB[label]) return label;
+      // Try case-insensitive
+      const lower = label.toLowerCase();
+      for (const key of Object.keys(POKEMON_DB)) {
+        if (key.toLowerCase() === lower) return key;
+      }
+      return null;
+    }
+
+    const TYPE_COLORS = {
+      bug: "type-bug", flying: "type-flying", poison: "type-poison",
+      fire: "type-fire", water: "type-water", normal: "type-normal",
+      rock: "type-rock", ground: "type-ground", psychic: "type-psychic"
+    };
+
+    const CONF_THRESHOLD = 0.85;
+
+    /* ════════════════════════════════════════════════
+       STATE
+       ════════════════════════════════════════════════ */
+    let model = null;
+    let cameraStream = null;
+    let cameraActive = false;
+    let liveInterval = null;
+    let currentState = "idle"; // idle | scanning | result | nodetect
+    let lastPredictions = null;
+
+    /* ════════════════════════════════════════════════
+       LOADING
+       ════════════════════════════════════════════════ */
+    async function loadModel() {
+      const statusEl = document.getElementById("load-status");
+      const modelURL = "https://teachablemachine.withgoogle.com/models/EN_V3AB6y/model.json";
+      const metadataURL = "https://teachablemachine.withgoogle.com/models/EN_V3AB6y/metadata.json";
+      try {
+        statusEl.textContent = "CARGANDO TENSORFLOW.JS...";
+        await tf.ready();
+        statusEl.textContent = "CARGANDO MODELO POKÉDEX...";
+        model = await tmImage.load(modelURL, metadataURL);
+        statusEl.textContent = "¡MODELO LISTO!";
+        await new Promise(r => setTimeout(r, 600));
+        hideLoadingScreen();
+      } catch (e) {
+        statusEl.textContent = "ERROR AL CARGAR. RECARGA LA PÁGINA.";
+        console.error("Model load error:", e);
+      }
+    }
+
+    function hideLoadingScreen() {
+      const ls = document.getElementById("loading-screen");
+      ls.style.opacity = "0";
+      setTimeout(() => ls.style.display = "none", 800);
+    }
+
+    /* ════════════════════════════════════════════════
+       PREDICTION
+       ════════════════════════════════════════════════ */
+    async function predict(imageElement) {
+      if (!model) return null;
+      const predictions = await model.predict(imageElement);
+      return predictions; // [{className, probability}]
+    }
+
+    function getTopPrediction(predictions) {
+      if (!predictions || !predictions.length) return null;
+      return predictions.reduce((a, b) => a.probability > b.probability ? a : b);
+    }
+
+    /* ════════════════════════════════════════════════
+       UI STATE MACHINE
+       ════════════════════════════════════════════════ */
+    function setState(state) {
+      currentState = state;
+      const idleEl = document.getElementById("idle-display");
+      const scanEl = document.getElementById("scanning-overlay");
+      const resultEl = document.getElementById("result-display");
+      const noDetectEl = document.getElementById("no-detect-display");
+      const previewEl = document.getElementById("screen-preview");
+
+      idleEl.style.display = "none";
+      scanEl.classList.remove("active");
+      resultEl.style.display = "none";
+      noDetectEl.style.display = "none";
+
+      if (state === "idle") {
+        idleEl.style.display = "flex";
+        previewEl.style.display = "none";
+      } else if (state === "scanning") {
+        scanEl.classList.add("active");
+        previewEl.style.display = "block";
+      } else if (state === "result") {
+        resultEl.style.display = "block";
+        previewEl.style.display = "block";
+      } else if (state === "nodetect") {
+        noDetectEl.style.display = "flex";
+        previewEl.style.display = "block";
+      }
+    }
+
+    function updateConfidenceBar(topConf, predictions) {
+      const pct = Math.round(topConf * 100);
+      const bar = document.getElementById("conf-bar");
+      const lbl = document.getElementById("conf-pct-label");
+
+      bar.style.width = pct + "%";
+      lbl.textContent = pct + "%";
+
+      bar.classList.remove("medium", "low");
+      if (topConf < 0.5) bar.classList.add("low");
+      else if (topConf < 0.75) bar.classList.add("medium");
+
+      // All labels bars
+      const container = document.getElementById("all-labels-container");
+      if (!predictions) { container.innerHTML = ""; return; }
+
+      const topClass = getTopPrediction(predictions).className;
+      const sorted = [...predictions].sort((a, b) => b.probability - a.probability);
+      container.innerHTML = sorted.slice(0, 9).map(p => {
+        const isTop = p.className === topClass;
+        const pct2 = Math.round(p.probability * 100);
+        const dbKey = normalizeLabel(p.className);
+        const name = dbKey ? POKEMON_DB[dbKey].pokeName : p.className;
+        return `
+      <div class="label-row">
+        <div class="label-name ${isTop ? 'top' : ''}">${name}</div>
+        <div class="label-mini-track">
+          <div class="label-mini-fill ${isTop ? 'top' : ''}" style="width:${pct2}%"></div>
+        </div>
+        <div class="label-pct ${isTop ? 'top' : ''}">${pct2}%</div>
+      </div>`;
+      }).join("");
+    }
+
+    /* ════════════════════════════════════════════════
+       DISPLAY RESULTS
+       ════════════════════════════════════════════════ */
+    function displayResult(dbKey, topConf) {
+      const data = POKEMON_DB[dbKey];
+      if (!data) return;
+
+      // Screen (small display)
+      document.getElementById("pokemon-sprite").src =
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${data.pokeId}.png`;
+      document.getElementById("screen-pokemon-name").textContent = data.pokeName.toUpperCase();
+      document.getElementById("screen-pokemon-number").textContent = data.pokeNumber;
+      document.getElementById("screen-animal-name").textContent = data.animal.commonName.split(" ").slice(0, 3).join(" ");
+      document.getElementById("screen-conf-text").textContent = Math.round(topConf * 100) + "%";
+
+      // Right panel – Pokémon card
+      document.getElementById("poke-dex-number").textContent = data.pokeNumber;
+      document.getElementById("pokemon-main-sprite").src =
+        `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${data.pokeId}.png`;
+      document.getElementById("pokemon-main-sprite").onerror = function () {
+        this.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${data.pokeId}.png`;
+      };
+      document.getElementById("poke-name").textContent = data.pokeName;
+      document.getElementById("poke-num").textContent = data.pokeNumber;
+      document.getElementById("poke-category").textContent = data.category;
+      document.getElementById("poke-gen").textContent = "Gen " + data.generation;
+      document.getElementById("poke-height").textContent = data.height;
+      document.getElementById("poke-weight").textContent = data.weight;
+
+      const typesEl = document.getElementById("poke-types");
+      typesEl.innerHTML = data.types.map(t =>
+        `<span class="type-badge ${TYPE_COLORS[t] || 'type-normal'}">${t.toUpperCase()}</span>`
+      ).join("");
+
+      // Right panel – Animal card
+      const a = data.animal;
+      document.getElementById("animal-conservation-badge").textContent = a.conservationText;
+      document.getElementById("animal-conservation-badge").className = "card-badge " + a.conservationClass;
+      document.getElementById("animal-img").src = a.image;
+      document.getElementById("animal-common").textContent = a.commonName;
+      document.getElementById("animal-scientific").textContent = a.scientificName;
+      document.getElementById("animal-habitat").textContent = a.habitat;
+      const consEl = document.getElementById("animal-conservation");
+      consEl.textContent = a.conservationText + " (" + a.conservation + ")";
+      consEl.className = "conservation-badge " + a.conservationClass;
+      document.getElementById("animal-population").textContent = a.population;
+      document.getElementById("animal-curiosity").textContent = a.curiosity;
+
+      // Show content, hide placeholders
+      document.getElementById("pokemon-placeholder").classList.add("hidden");
+      document.getElementById("pokemon-content").classList.remove("hidden");
+      document.getElementById("animal-placeholder").classList.add("hidden");
+      document.getElementById("animal-content").classList.remove("hidden");
+      document.getElementById("pokemon-card").classList.add("revealed");
+      document.getElementById("animal-card").classList.add("revealed");
+    }
+
+    function displayNoResult() {
+      document.getElementById("pokemon-placeholder").classList.remove("hidden");
+      document.getElementById("pokemon-content").classList.add("hidden");
+      document.getElementById("animal-placeholder").classList.remove("hidden");
+      document.getElementById("animal-content").classList.add("hidden");
+      document.getElementById("pokemon-card").classList.remove("revealed");
+      document.getElementById("animal-card").classList.remove("revealed");
+    }
+
+    /* ════════════════════════════════════════════════
+       PROCESS IMAGE
+       ════════════════════════════════════════════════ */
+    async function processImage(imgElement) {
+      setState("scanning");
+      playScan();
+      document.getElementById("all-labels-container").innerHTML = "";
+      updateConfidenceBar(0, null);
+      await new Promise(r => setTimeout(r, 1800)); // scanning animation
+
+      const predictions = await predict(imgElement);
+      if (!predictions) return;
+
+      lastPredictions = predictions;
+      const top = getTopPrediction(predictions);
+      updateConfidenceBar(top.probability, predictions);
+
+      if (top.probability >= CONF_THRESHOLD) {
+        const dbKey = normalizeLabel(top.className);
+        if (dbKey) {
+          setState("result");
+          playSuccess();
+          playCry(POKEMON_DB[dbKey].pokeId);
+          displayResult(dbKey, top.probability);
+        } else {
+          setState("nodetect");
+          displayNoResult();
+        }
+      } else {
+        setState("nodetect");
+        playFail();
+        displayNoResult();
+      }
+    }
+
+    /* ════════════════════════════════════════════════
+       FILE UPLOAD
+       ════════════════════════════════════════════════ */
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const previewEl = document.getElementById("screen-preview");
+        previewEl.src = e.target.result;
+        previewEl.style.display = "block";
+
+        const img = new Image();
+        img.onload = async function () {
+          await processImage(img);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = "";
+    }
+
+    /* ════════════════════════════════════════════════
+       CAMERA
+       ════════════════════════════════════════════════ */
+    async function toggleCamera() {
+      if (cameraActive) {
+        closeCamera();
+      } else {
+        openCamera();
+      }
+    }
+
+    async function openCamera() {
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "environment", width: { ideal: 640 }, height: { ideal: 480 } }
+        });
+        const video = document.getElementById("cam-video");
+        video.srcObject = cameraStream;
+        document.getElementById("cam-modal").classList.add("active");
+        document.getElementById("btn-cam").classList.add("active");
+        cameraActive = true;
+
+        // Start live inference
+        video.addEventListener("loadeddata", startLiveInference);
+      } catch (e) {
+        alert("No se pudo acceder a la cámara: " + e.message);
+      }
+    }
+
+    function startLiveInference() {
+      const video = document.getElementById("cam-video");
+      const canvas = document.getElementById("cam-canvas");
+      const confFill = document.getElementById("cam-conf-fill");
+      const labelEl = document.getElementById("cam-result-label");
+
+      canvas.width = video.videoWidth || 224;
+      canvas.height = video.videoHeight || 224;
+      const ctx = canvas.getContext("2d");
+
+      clearInterval(liveInterval);
+      liveInterval = setInterval(async () => {
+        if (!model || !cameraActive) return;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const predictions = await predict(canvas);
+        if (!predictions) return;
+
+        const top = getTopPrediction(predictions);
+        const pct = Math.round(top.probability * 100);
+        confFill.style.width = pct + "%";
+
+        if (top.probability >= CONF_THRESHOLD) {
+          const dbKey = normalizeLabel(top.className);
+          if (dbKey) {
+            const name = POKEMON_DB[dbKey].pokeName;
+            labelEl.textContent = `✓ ¡${name} detectado! (${pct}%)`;
+            labelEl.style.color = "var(--screen-green)";
+          }
+        } else {
+          labelEl.textContent = `Buscando Pokémon... (${pct}% en ${POKEMON_DB[normalizeLabel(top.className)]?.pokeName || top.className})`;
+          labelEl.style.color = "#666";
+        }
+      }, 700);
+    }
+
+    async function captureFromCamera() {
+      const video = document.getElementById("cam-video");
+      const canvas = document.getElementById("cam-canvas");
+      const ctx = canvas.getContext("2d");
+
+      canvas.width = video.videoWidth || 224;
+      canvas.height = video.videoHeight || 224;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const previewEl = document.getElementById("screen-preview");
+      previewEl.src = canvas.toDataURL("image/jpeg");
+
+      closeCamera();
+      await processImage(canvas);
+    }
+
+    function closeCamera() {
+      clearInterval(liveInterval);
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      document.getElementById("cam-modal").classList.remove("active");
+      document.getElementById("btn-cam").classList.remove("active");
+      cameraActive = false;
+    }
+
+    /* ════════════════════════════════════════════════
+       INIT
+       ════════════════════════════════════════════════ */
+    window.addEventListener("load", loadModel);
+
+    /* ════════════════════════════════════════════════
+       AUDIO
+       ════════════════════════════════════════════════ */
+    function toggleMusic() {
+      const music = document.getElementById("bg-music");
+      const btn = document.getElementById("music-btn");
+      if (music.paused) {
+        music.play().catch(() => {});
+        btn.textContent = "🔊";
+      } else {
+        music.pause();
+        btn.textContent = "🔇";
+      }
+    }
+function stopAllSounds() {
+  ["sound-scan", "sound-success", "sound-fail", "sound-cry"].forEach(id => {
+    const s = document.getElementById(id);
+    if (s) { s.pause(); s.currentTime = 0; }
+  });
+}
+
+function playScan() {
+  stopAllSounds();
+  const s = document.getElementById("sound-scan");
+  if (s) { s.currentTime = 0; s.play().catch(() => {}); }
+}
+
+function playSuccess() {
+  stopAllSounds();
+  const s = document.getElementById("sound-success");
+  if (s) { s.currentTime = 0; s.play().catch(() => {}); }
+}
+
+function playFail() {
+  stopAllSounds();
+  const s = document.getElementById("sound-fail");
+  if (s) { s.currentTime = 0; s.play().catch(() => {}); }
+}
+
+function playCry(pokeId) {
+  stopAllSounds();
+  const cry = document.getElementById("sound-cry");
+  if (cry) {
+    cry.src = `https://pokemoncries.com/cries/${pokeId}.mp3`;
+    cry.currentTime = 0;
+    cry.play().catch(() => {});
+  }
+}
+
+  </script>
+</body>
+
+</html>
